@@ -1,0 +1,264 @@
+---
+title: 'Análise da interferência da formação de florestas plantadas na área de lâmina hídrica da bacia do rio doce'
+author: "João Paulo S. Gusmão"
+date: "2023-04-28"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+#install.packages('tidyr')
+#install.packages('rlist')
+
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(rlist)
+```
+### Referências
+"Projeto MapBiomas – Coleção 7.1 da Série Anual de Mapas de Uso e Cobertura da Terra do Brasil, acessado em 28/04/2023 através do link: <https://mapbiomas.org/metodo-agua>
+
+### Metodologia
+####  MAPBIOMAS - MAPEAMENTO DO USO E COBERTURA DO SOLO
+
+Utilizando a plataforma GEE - Google Earth Engiane através doscript "mapbiomas-user-toolkit-lulc.js" e as seguintes definição:
+Region: mapbiomas-brazil
+Collection: collection-7.1
+Tables: level_2_drainage_basin
+Properties: name_pt_br
+Features: Doce
+Data Type: Coverage
+Buffer: none
+Layers: "Doce 1985" a "Doce 2021"
+Ao clicar em export images to Google Drive
+
+Iremos na aba "Task" e clicar em "RUN" em todos os arquivos da série. Então será definido o "Drive folder" que é onde será armazenado os arquivos baixados no seu google drive.
+
+
+
+#### MAPBIOMAS - MAPEAMENTO DA SUPERFÍCIE DE ÁGUA: SÍNTESE DO MÉTODO
+<https://mapbiomas.org/metodo-agua>
+
+Esta é a primeira coleção completa do MapBiomas Água <https://plataforma.brasil.mapbiomas.org/agua>com o mapeamento da superfície de água do Brasil de 1985 a 2021, com dados Anuais e Mensais para todo o período incluindo:
+(i) dado no ano e acumulado em um período;
+(ii) frequência de ocorrência;
+(iii) transições (ganhos e perdas);
+(iv) classificação da cobertura do tipo de corpo d’água.
+A descrição do método de mapeamento da superfície de água e da classificação de corpos hídricos está disponível a seção de metodologias do MapBiomas.
+Os mapas anuais de superfície de água e as tabelas estatísticas estão disponíveis na área de download do MapBiomas.
+Para sugestões, críticas e idéias para aprimorar o trabalho, por favor, entre em contato pelo e-mail: contato@mapbiomas.org ou acesse o Fórum MapBiomas.
+Os dados do MapBiomas são públicos, abertos e gratuitos sob licença Creative Commons CC-CY-SA e mediante a referência da fonte observando o seguinte formato: "Projeto MapBiomas – Mapeamento da Superfície de Água do Brasil Coleção 1, acessado em [DATA] através do link: [LINK]".
+
+```{r cars}
+coverage <- read_csv("datasets/mapbiomas-brazil-collection-71-doce-area.csv", show_col_types = FALSE)
+
+#Seleção de variáveis de interesse neste estudo
+var_interesse <- c("ANO", "Forest Formation", "Forest Plantation", "Pasture" , "River, Lake and Ocean", "Urban Infrastructure" )
+coverage <- coverage%>%select("area", 'band', 'class_name')
+
+colnames(coverage) <- c('AREA_HA', 'ANO', 'CLASSE')
+coverage$ANO <- str_replace(coverage$ANO, 'classification_', '')
+coverage <- coverage %>% filter(CLASSE %in% var_interesse)
+coverage <- spread(coverage, CLASSE, AREA_HA)
+coverage$ANO <- as.integer(coverage$ANO)
+
+colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Pasto" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
+coverage
+```
+
+####  MAPBIOMAS - MAPEAMENTO DA LÂMINA HÍDRICA
+
+Utilizando a plataforma GEE - Google Earth Engiane através doscript "mapbiomas-user-toolkit-water.js" e as seguintes definições:
+
+Region: mapbiomas-brazil
+Collection: collection-1.0
+Tables: prmapbiomas-workspace/projects/AUXILIAR/bacias-nivel-2
+Properties: name
+Features: Doce
+Data Type: annual_water_coverage
+Buffer: none
+Layers: "Doce 1985" a "Doce 2021"
+Ao clicar em export images to Google Drive
+
+Iremos na aba "Task" e clicar em "RUN" em todos os arquivos da série. Então será definido o "Drive folder" que é onde será armazenado os arquivos baixados no seu google drive.
+Esta é a primeira coleção completa do MapBiomas Água com o mapeamento da superfície de água do Brasil de 1985 a 2020, com dados anuais e mensais para todo o período incluindo: (i) dado no ano e acumulado em um período; (ii) frequência de ocorrência; (iii) transições(ganhos e perdas) e(iv) classificação da cobertura do tipo de corpo d’água. A descrição do método de mapeamento da superfície de água e da classificação de corpos hídricos está disponível na seção de metodologias do MapBiomas. Os mapas anuais de superfície de água e as tabelas estatísticas estão disponíveis na área de download do MapBiomas. Para sugestões, críticas e ideias para aprimorar o trabalho, por favor, entre em contato pelo e- mail: contato@mapbiomas.org ou acesse o Fórum MapBiomas. Os dados do MapBiomas são públicos, abertos e gratuitos sob licença Creative Commons CC - CY - SA e mediante a referência da fonte observando o seguinte formato: "Projeto MapBiomas – Mapeamento da Superfície de Água do Brasil Coleção 1, acessado em [DATA] através do link: [LINK]".
+```{r}
+water <- read_csv("datasets/mapbiomas-brazil-collection-10-doce-area.csv", show_col_types = FALSE)
+water <- water %>% select(band, area)
+colnames(water) <- c('ANO', 'WATER_COVERAGE_HA')
+
+water$ANO <- str_replace(water$ANO, 'water_coverage_', '')
+water$ANO <- as.integer(water$ANO)
+```
+
+#### REALIZANDO O JOIN DAS DUAS TABELAS OBTIDAS ATÉ ENTÃO
+```{r}
+dataset <- merge(coverage, water)
+```
+#### Agora temos a tabela de dados a analisar
+```{r}
+print(head(dataset, 10))
+```
+
+#### Função para obter as variáveis estatísticas para análise e interpretação dos dados.
+```{r}
+analisamodelo <- function (summary){
+  #Dispersion parameter for gaussian family taken to be
+  dpgf <- summary$dispersion
+  
+  #Residual deviance
+  rd <- summary$deviance
+  
+  #Degrees of dispersion - DF / Grau de liberdade()
+  dfl <- summary$df.residual
+
+  intercept <- summary[["coefficients"]][1]
+  variavel <- summary[["coefficients"]][2][1]
+  dependente <- summary[["terms"]][[2]]
+  independente <- summary[["terms"]][[3]]
+  relacao <-  rd/dfl
+  index <- dpgf/relacao #se for próximo de 1 a relação é significatica
+  equacao <- paste('y=', intercept, '+', variavel, '* x')
+  return (c(Dispersion_parameter=dpgf, Residual_deviance=rd,     degrees_of_freedom=dfl, est_intercept = intercept, est_dependente=variavel, var_dependente=dependente, var_independente=independente, relacao=relacao, index=index, equacao=equacao))
+}
+```
+
+#### Testando os modelos
+```{r}
+attach(dataset)
+set.seed(2023)
+colnames((dataset))
+modelos = list()
+```
+
+#### 1 - Análise: Formacao_Florestal~ANO
+```{r}
+m1 <- glm(Formacao_Florestal~ANO)
+mnulo1 <- glm(Formacao_Florestal~1)
+
+anova.md1 <- anova(m1, mnulo1, test='F')
+summary.m1 <- summary(m1)
+
+dt.modelo1 <- analisamodelo(summary.m1)
+modelos <- append(modelos, dt.modelo1)
+
+plot(Formacao_Florestal~ANO, ylab="Formação florestal plantada (ha)", xlab=dt.modelo1$var_independente, pch=16,las=1,bty="l")
+abline(m1, lty=2)
+equacao <- dt.modelo1$equacao
+legend(x='topleft', legend=equacao,bty="n", )
+```
+
+#### 2 - Análise: Plantacao_Florestal~ANO
+```{r}
+m2 <- glm(Plantacao_Florestal~ANO)
+mnulo2 <- glm(Plantacao_Florestal~1)
+
+anova.md2 <- anova(m2, mnulo2, test='F')
+summary.m2 <- summary(m2)
+
+dt.modelo2 <- analisamodelo(summary.m2)
+modelos <- append(modelos, dt.modelo2)
+
+plot(Plantacao_Florestal~ANO, ylab="Plantacao florestal plantada (ha)", xlab=dt.modelo2$var_independente, pch=16,las=1,bty="l")
+#curve(dt.modelo$est_intercept + dt.modelo$est_dependente*x, add=T, lty=16)
+equacao <- dt.modelo2$equacao
+abline(m2, lty=2)
+legend(x='topleft', legend=equacao,bty="n", )
+```
+
+#### 3 - Análise: Pasto~ANO
+```{r}
+m3 <- glm(Pasto~ANO)
+mnulo3 <- glm(Pasto~1)
+
+anova.md3 <- anova(m3, mnulo3, test='F')
+summary.m3 <- summary(m3)
+
+dt.modelo3 <- analisamodelo(summary.m3)
+modelos <- append(modelos, dt.modelo3)
+
+plot(Pasto~ANO, ylab="Pastagem (ha)", xlab=dt.modelo3$var_independente, pch=16,las=1,bty="l")
+
+equacao <- dt.modelo3$equacao
+
+abline(m3, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+```
+#### 4 - Análise: Rio_Lago_Mar~ANO
+```{r}
+m4 <- glm(Rio_Lago_Mar~ANO)
+mnulo4 <- glm(Rio_Lago_Mar~1)
+
+anova.md4 <- anova(m4, mnulo4, test='F')
+summary.m4 <- summary(m4)
+
+dt.modelo4 <- analisamodelo(summary.m4)
+modelos <- append(modelos, dt.modelo4)
+
+plot(Rio_Lago_Mar~ANO, ylab="Corpos hídricos (ha)", xlab=dt.modelo4$var_independente, pch=16,las=1,bty="l")
+
+equacao <- dt.modelo4$equacao
+
+abline(m4, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+```
+
+#### 5 - Análise: Infraestrutura_Urbana~ANO
+```{r}
+m5 <- glm(Infraestrutura_Urbana~ANO)
+mnulo5 <- glm(Infraestrutura_Urbana~1)
+
+anova.md5 <- anova(m5, mnulo5, test='F')
+summary.m5 <- summary(m5)
+
+dt.modelo5 <- analisamodelo(summary.m5)
+modelos <- append(modelos, dt.modelo5)
+
+plot(Infraestrutura_Urbana~ANO, ylab="Area urbana (ha)", xlab=dt.modelo5$var_independente, pch=16,las=1,bty="l")
+
+equacao <- dt.modelo5$equacao
+
+abline(m5, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+
+```
+#### 6 - Análise: WATER_COVERAGE_HA~ANO
+```{r}
+m6 <- glm(WATER_COVERAGE_HA~ANO)
+mnulo6 <- glm(WATER_COVERAGE_HA~1)
+
+anova.md6 <- anova(m6, mnulo6, test='F')
+summary.m6 <- summary(m6)
+
+dt.modelo6 <- analisamodelo(summary.m6)
+modelos <- append(modelos, dt.modelo6)
+
+plot(WATER_COVERAGE_HA~ANO, ylab="Superfície Hidrica (ha)", xlab=dt.modelo6$var_independente, pch=16,las=1,bty="l")
+
+equacao <- dt.modelo6$equacao
+
+abline(m6, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+
+```
+
+```{r}
+lista <- list(analisamodelo(summary.m1),
+              analisamodelo(summary.m2),
+              analisamodelo(summary.m3),
+              analisamodelo(summary.m4),
+              analisamodelo(summary.m5),
+              analisamodelo(summary.m6)
+            )
+lista <- do.call(rbind, lista)
+lista
+```
