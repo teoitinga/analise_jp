@@ -11,9 +11,11 @@ output:
 ```{r setup, include=FALSE}
 #install.packages('tidyr')
 #install.packages('rlist')
+#install.packages('ggplot2')
 
 knitr::opts_chunk$set(echo = TRUE)
 
+library(ggplot2)
 library(readr)
 library(stringr)
 library(tidyr)
@@ -94,6 +96,7 @@ colnames(water) <- c('ANO', 'WATER_COVERAGE_HA')
 
 water$ANO <- str_replace(water$ANO, 'water_coverage_', '')
 water$ANO <- as.integer(water$ANO)
+water
 ```
 
 #### REALIZANDO O JOIN DAS DUAS TABELAS OBTIDAS ATÉ ENTÃO
@@ -151,6 +154,7 @@ plot(Formacao_Florestal~ANO, ylab="Formação florestal plantada (ha)", xlab=dt.
 abline(m1, lty=2)
 equacao <- dt.modelo1$equacao
 legend(x='topleft', legend=equacao,bty="n", )
+list(dt.modelo1)
 ```
 
 #### 2 - Análise: Plantacao_Florestal~ANO
@@ -250,15 +254,21 @@ abline(m6, lty=2)
 legend(x='bottomleft', legend=equacao,bty="n", )
 
 ```
-
 ```{r}
-lista <- list(analisamodelo(summary.m1),
-              analisamodelo(summary.m2),
-              analisamodelo(summary.m3),
-              analisamodelo(summary.m4),
-              analisamodelo(summary.m5),
-              analisamodelo(summary.m6)
-            )
-lista <- do.call(rbind, lista)
-lista
+chart6 <- ggplot(dataset, aes(x=ANO, y=WATER_COVERAGE_HA)) + geom_point(color='darkblue', size=2) + 
+                stat_smooth(method = "lm",
+                        col = "#C42126", linetype="dashed", color="darkred", size=1,
+                        se = TRUE,
+                        size = 0.5) + 
+        theme_minimal() + 
+        labs(
+          x = 'ANO',
+          y = 'Superfície Hidrica (ha)',
+        title = 'Área de superfície hídrica disponível',
+        subtitle =
+        "Relação de superfície de água no decorrer da série histórica",
+        caption = "*complidado MapBiomas.org"
+         )
+chart6
 ```
+
