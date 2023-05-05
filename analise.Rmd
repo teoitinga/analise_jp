@@ -62,14 +62,14 @@ coverage <- read_csv("datasets/mapbiomas-brazil-collection-71-doce-area.csv", sh
 #Seleção de variáveis de interesse neste estudo
 var_interesse <- c("ANO", "Forest Formation", "Forest Plantation", "Pasture" , "River, Lake and Ocean", "Urban Infrastructure" )
 coverage <- coverage%>%select("area", 'band', 'class_name')
-
+coverage
 colnames(coverage) <- c('AREA_HA', 'ANO', 'CLASSE')
 coverage$ANO <- str_replace(coverage$ANO, 'classification_', '')
 coverage <- coverage %>% filter(CLASSE %in% var_interesse)
 coverage <- spread(coverage, CLASSE, AREA_HA)
 coverage$ANO <- as.integer(coverage$ANO)
 
-colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Plantacao_Florestal" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
+colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Pasto" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
 coverage
 ```
 
@@ -179,7 +179,7 @@ legend(x='topleft', legend=equacao,bty="n", )
 ```{r}
 m3 <- glm(Pasto~ANO)
 mnulo3 <- glm(Pasto~1)
-
+colnames(dataset)
 anova.md3 <- anova(m3, mnulo3, test='F')
 summary.m3 <- summary(m3)
 
@@ -245,16 +245,13 @@ summary.m6 <- summary(m6)
 
 dt.modelo6 <- analisamodelo(summary.m6)
 modelos <- append(modelos, dt.modelo6)
-
-plot(WATER_COVERAGE_HA~ANO, ylab="Superfície Hidrica (ha)", xlab=dt.modelo6$var_independente, pch=16,las=1,bty="l")
-
 equacao <- dt.modelo6$equacao
 
-abline(m6, lty=2)
+chartagua <- plot(WATER_COVERAGE_HA~ANO, ylab="Superfície Hidrica (ha)", xlab=dt.modelo6$var_independente, pch=16,las=1,bty="l") + 
+              abline(m6, lty=2) + 
+              legend(x='bottomleft', legend=equacao,bty="n", )
 
-legend(x='bottomleft', legend=equacao,bty="n", )
-plot(dataset)
-
+chartagua
 ```
 
 ```{r}
@@ -267,14 +264,26 @@ chart6 <- ggplot(dataset, aes(x=ANO, y=WATER_COVERAGE_HA)) + geom_point(color='d
         labs(
           x = 'ANO',
           y = 'Superfície Hidrica (ha)',
-        title = 'Área de superfície hídrica disponível',
-        subtitle =
-        "Relação de superfície de água no decorrer da série histórica",
-        caption = "*complidado MapBiomas.org"
-         ) + 
-png('./chart.png')
+          title = 'Área de superfície hídrica disponível',
+          subtitle = "Relação de superfície de água no decorrer da série histórica",
+          caption = "*complidado MapBiomas.org"
+         )
+#png('./chart.png')
+chart6+annotate("text", y=0, x=0,
+           label = equacao,
+           fontface = "bold")
+```
 
-chart6
+
+```{r}
+colnames(dataset)
+pltds <- ggplot(dataset)+geom_line(aes(x=ANO, y=Formacao_Florestal)) + 
+          geom_line(aes(x=ANO, y=Plantacao_Florestal)) + 
+          geom_line(aes(x=ANO, y=Pasto)) + 
+          geom_line(aes(x=ANO, y=Rio_Lago_Mar)) + 
+          geom_line(aes(x=ANO, y=Infraestrutura_Urbana)) +
+facet_wrap(ANO~., nrow = 3)
+pltds
 ```
 
 ```{r}
