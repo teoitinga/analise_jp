@@ -69,7 +69,7 @@ coverage <- coverage %>% filter(CLASSE %in% var_interesse)
 coverage <- spread(coverage, CLASSE, AREA_HA)
 coverage$ANO <- as.integer(coverage$ANO)
 
-colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Pasto" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
+colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Plantacao_Florestal" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
 coverage
 ```
 
@@ -221,7 +221,8 @@ mnulo5 <- glm(Infraestrutura_Urbana~1)
 
 anova.md5 <- anova(m5, mnulo5, test='F')
 summary.m5 <- summary(m5)
-
+summary(m5)
+anova.md5
 dt.modelo5 <- analisamodelo(summary.m5)
 modelos <- append(modelos, dt.modelo5)
 
@@ -252,10 +253,12 @@ equacao <- dt.modelo6$equacao
 abline(m6, lty=2)
 
 legend(x='bottomleft', legend=equacao,bty="n", )
+plot(dataset)
 
 ```
+
 ```{r}
-chart6 <- ggplot(dataset, aes(x=ANO, y=WATER_COVERAGE_HA)) + geom_point(color='darkblue', size=2) + 
+chart6 <- ggplot(dataset, aes(x=ANO, y=WATER_COVERAGE_HA)) + geom_point(color='darkblue', size=2) +
                 stat_smooth(method = "lm",
                         col = "#C42126", linetype="dashed", color="darkred", size=1,
                         se = TRUE,
@@ -268,7 +271,77 @@ chart6 <- ggplot(dataset, aes(x=ANO, y=WATER_COVERAGE_HA)) + geom_point(color='d
         subtitle =
         "Relação de superfície de água no decorrer da série histórica",
         caption = "*complidado MapBiomas.org"
-         )
+         ) + 
+png('./chart.png')
+
 chart6
+```
+
+```{r}
+colnames(dataset)
+
+m7 <- glm(WATER_COVERAGE_HA~Pasto)
+mnulo7 <- glm(WATER_COVERAGE_HA~1)
+
+anova.md7 <- anova(m7, mnulo7, test='F')
+summary.m7 <- summary(m7)
+
+dt.modelo7 <- analisamodelo(summary.m7)
+modelos <- append(modelos, dt.modelo7)
+
+plot(WATER_COVERAGE_HA~Pasto, ylab="Superfície Hidrica (ha)",xlab='Área de pastagem (ha)',  pch=16,las=1,bty="l")
+
+equacao <- dt.modelo7$equacao
+
+abline(m7, lty=2)
+
+legend(x='topleft', legend=equacao, bty="n", )
+59746/34
+summary.m7
+dt.modelo7
+```
+
+```{r}
+m8 <- glm(WATER_COVERAGE_HA~Plantacao_Florestal)
+mnulo8 <- glm(WATER_COVERAGE_HA~1)
+
+anova.md8 <- anova(m8, mnulo8, test='F')
+summary.m8 <- summary(m8)
+
+dt.modelo8 <- analisamodelo(summary.m8)
+modelos <- append(modelos, dt.modelo8)
+
+plot(WATER_COVERAGE_HA~Plantacao_Florestal, ylab="Superfície Hidrica (ha)",xlab='Área de floresta plantada (ha)',  pch=16,las=1,bty="l")
+
+equacao <- dt.modelo8$equacao
+
+abline(m8, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+59746/34
+summary.m8
+dt.modelo8
+```
+```{r}
+m9 <- glm(WATER_COVERAGE_HA~Infraestrutura_Urbana)
+mnulo9 <- glm(WATER_COVERAGE_HA~1)
+
+anova.md9 <- anova(m9, mnulo9, test='F')
+summary.m9 <- summary(m9)
+
+dt.modelo9 <- analisamodelo(summary.m9)
+modelos <- append(modelos, dt.modelo9)
+
+plot(WATER_COVERAGE_HA~Infraestrutura_Urbana, ylab="Superfície Hidrica (ha)",xlab='Área de infraestutura urbana (ha)',  pch=16,las=1,bty="l")
+
+equacao <- dt.modelo9$equacao
+
+abline(m9, lty=2)
+
+legend(x='bottomleft', legend=equacao,bty="n", )
+19997/34
+summary.m9
+dt.modelo9
+anova.md9 # somente DF(35) da linha 2; teste F - Fisher(151.22), valorp(4.56e-14) < 0.001(***)
 ```
 
