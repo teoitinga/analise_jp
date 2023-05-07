@@ -1,11 +1,12 @@
-install.packages('dplyr')
-install.packages('stringr')
+#install.packages('dplyr')
+#install.packages('stringr')
 
 library(dplyr)
 library(readr)
 library(stringr)
  
-ds <- read_delim("datasets/ds_tcc_qmax_qmin_r.csv", delim = ";", escape_double = FALSE, col_types = cols(ANO = col_integer()), trim_ws = TRUE)
+ds <- read_csv("datasets/ds_tcc_qmax_qmin_r.csv")
+View(ds_tcc_qmax_qmin_r)
 
 ds_riodoce <- read_delim("datasets/mapbiomas-brazil-collection-71-doce-area.csv", show_col_types = FALSE)
 ds_riodoce <- ds_riodoce %>% select(c(-'system:index', -'.geo', -'class'))
