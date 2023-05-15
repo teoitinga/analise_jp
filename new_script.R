@@ -272,14 +272,18 @@ chart.m6 <- ggplot(data=dataset, aes(x=Infraestrutura_Urbana, y=Rio_Lago_Mar)) +
     axis.title = element_text(size=18),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.background = element_blank(),
+    plot.caption = element_text(hjust = 0, size=22, face = "italic"),
+    axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size=14),
+    axis.text.x = element_text(size=14)
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
   annotate("text", size = 10, x = 400, y = 725, label = "y = 765.509767577184 - 0.219415393368874 * x", parse = FALSE) +
   labs(
     y = paste(denvar.water, '(ha)'),
-    x = paste('Área ', denvar.urbanizada)
+    x = paste('Área ', denvar.urbanizada),
+    caption = "Figura 04 - relação entre a área de superfície de água e infra estrutura urbana", loc='leftbottom'
   )
 chart.m6
 summary.m6
@@ -309,7 +313,10 @@ chart.m7 <- ggplot(data=dataset, aes(x=Plantacao_Florestal, y=Rio_Lago_Mar)) +
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.background = element_blank(),
+    plot.caption = element_text(hjust = 0, size=22, face = "italic"),
+    axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size=14),
+    axis.text.x = element_text(size=14)
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
@@ -317,6 +324,7 @@ chart.m7 <- ggplot(data=dataset, aes(x=Plantacao_Florestal, y=Rio_Lago_Mar)) +
   labs(
     y = paste(denvar.water, '(ha)'),
     x = paste('Área de ', denvar.florestaplantada, ' (ha)'),
+    caption = "Figura 03", loc='leftbottom'
   )
 chart.m7
 summary.m7
@@ -342,20 +350,26 @@ chart.m8 <- ggplot(data=dataset, aes(x=Pasto, y=Rio_Lago_Mar)) +
   geom_point(color='darkblue', size=5) +
   theme(
     axis.line = element_line(),
-    panel.grid.major = element_blank(),
-    axis.title = element_text(size=18),
+    panel.grid.major = element_blank(size=18),
+    axis.title = element_text(),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.background = element_blank(),
+    plot.caption = element_text(hjust = 0, size=22, face = "italic"),
+    axis.text.y = element_text(angle = 0, vjust = 0.5, hjust=1, size=14),
+    axis.text.x = element_text(size=14)
   ) +
+
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
   annotate("text", size=10, x = 39700, y = 700, label = "y = 81.4364024310247 + 0.0133243204093905 * x", parse = FALSE) +
   labs(
     y = paste(denvar.water, ' (ha)'),
     x = paste(denvar.pasto, ' (ha)'),
+    caption = "Figura 02", loc='leftbottom'
   )
 chart.m8
+
 summary.m8
 dt.modelo8
 
