@@ -40,6 +40,15 @@ analisamodelo <- function (summary){
 
 coverage <- read_csv("datasets/mapbiomas-brazil-collection-71-doce-area.csv", show_col_types = FALSE)
 
+#Ajusta tabela de pastagens
+pasture <- pasto_mapbiomas_brazil_collection_10_doce_area <- read_csv("datasets/pasto-mapbiomas-brazil-collection-10-doce-area.csv", show_col_types = FALSE)
+
+pasture <- as.data.frame(t(pasture))
+pasture$AREA_HA = as.integer(pasture$V1) + as.integer(pasture$V2) + as.integer(pasture$V3)
+pasture <- as.data.frame(pasture[-1,])%>%select(AREA_HA)
+pasture
+colnames(pasture) = c('ANO', 'AREA_HA')
+
 #Seleção de variáveis de interesse neste estudo
 var_interesse <- c("ANO", "Forest Formation", "Forest Plantation", "Pasture" , "River, Lake and Ocean", "Urban Infrastructure" )
 coverage <- coverage%>%select("area", 'band', 'class_name')
@@ -121,7 +130,8 @@ chart.m2 <- ggplot(data=dataset, aes(y=Plantacao_Florestal, x=ANO)) +
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.background = element_blank(),
+    axis.title.y = element_blank(),
   ) +
   stat_smooth(method = "lm",
   linetype="dashed", color="darkred", se = FALSE, size = 1) +
@@ -227,7 +237,8 @@ chart.m5 <- ggplot(data=dataset, aes(y=Infraestrutura_Urbana, x=ANO)) +
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
-    panel.background = element_blank()
+    panel.background = element_blank(),
+    axis.title.y = element_blank(),
   ) +
   stat_smooth(method = "lm",
             linetype="dashed", color="darkred", se = FALSE, size = 1) +
@@ -241,7 +252,13 @@ chart.m5
 
 charts1 <- (chart.m4 | chart.m2) / (chart.m3 | chart.m5)
 charts1 + annotate("text", y = 0, x = 0, label = "figura 01")
-charts1
+charts1 + 
+  theme(
+    plot.caption = element_text(hjust = 0, size=22, face = "italic"),
+  ) +
+  labs(
+  caption = "Figura 01", loc='leftbottom'
+)
 colnames(dataset)
 530/387
 1080/1.369509
