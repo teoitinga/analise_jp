@@ -38,45 +38,82 @@ analisamodelo <- function (summary){
   return (c(Dispersion_parameter=dpgf, Residual_deviance=rd,     degrees_of_freedom=dfl, est_intercept = intercept, est_dependente=variavel, var_dependente=dependente, var_independente=independente, relacao=relacao, index=index, equacao=equacao))
 }
 
-coverage <- read_csv("datasets/mapbiomas-brazil-collection-71-doce-area.csv", show_col_types = FALSE)
 
-#Ajusta tabela de pastagens
-pasture <- pasto_mapbiomas_brazil_collection_10_doce_area <- read_csv("datasets/pasto-mapbiomas-brazil-collection-10-doce-area.csv", show_col_types = FALSE)
 
-pasture <- as.data.frame(t(pasture))
-pasture$AREA_HA = as.integer(pasture$V1) + as.integer(pasture$V2) + as.integer(pasture$V3)
-pasture <- as.data.frame(pasture[-1,])%>%select(AREA_HA)
-pasture$ANO <- rownames(pasture)
-colnames(pasture) = c('PASTURE_AREA_HA', 'ANO')
-pasture
+#Aqui é necessário alguns ajustes por motivo ta tabela obtida diretamente na plataforma ser divergente da obitda via gee.
+coverage <- read_csv("datasets/2023-05-19 - MapBiomas - Tabela de Dados - plataforma - regio hidro PNHR - DOCE - PNRH.csv", show_col_types = FALSE)
+x <- t(coverage)
+x[1,]
+coluna_interesse <- c('4.2. Área Urbanizada', '3.3. Silvicultura (monocultura)', '3.1. Pastagem', '5. Corpo D`água')
+x <- x[,c(30, 26, 14, 33)]
+x <- x[-1,]
+x <- as.data.frame(x)
+View(x)
+#denvar.water = 'Superfície de água'
+#denvar.pasto = 'Pastagem'
+#denvar.florestaplantada = 'Floresta plantada'
+#denvar.florestanatural = 'Vegetação Florestal'
+#denvar.urbanizada = 'Infraestrutura urbana'
+
+colnames(x) <- c('Infraestrutura_Urbana', 'Plantacao_Florestal', 'Pasto', 'AGUA')
+x$Infraestrutura_Urbana <- as.integer(x$Infraestrutura_Urbana)
+x$Plantacao_Florestal <- as.integer(x$Plantacao_Florestal)
+x$AGUA <- as.integer(x$AGUA)
+x$Pasto <- as.integer(x$Pasto)
+
+x$ANO <- rownames(x)
+coverage <- x
+rm(x)
+### Fim dos ajuste
+
+
+######### Em caso de uso da tabela do GEE, use este script
 #Seleção de variáveis de interesse neste estudo
-var_interesse <- c("ANO", "Forest Formation", "Forest Plantation", "Pasture" , "River, Lake and Ocean", "Urban Infrastructure" )
-coverage <- coverage%>%select("area", 'band', 'class_name')
-coverage
-colnames(coverage) <- c('AREA_HA', 'ANO', 'CLASSE')
-coverage$ANO <- str_replace(coverage$ANO, 'classification_', '')
-coverage <- coverage %>% filter(CLASSE %in% var_interesse)
-coverage <- spread(coverage, CLASSE, AREA_HA)
-coverage$ANO <- as.integer(coverage$ANO)
-
-colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Pasto" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
+#var_interesse <- c("ANO", "Forest Formation", "Forest Plantation", "Pasture" , "River, Lake and Ocean", "Urban Infrastructure" )
+#coverage <- coverage%>%select("area", 'band', 'class_name')
+#coverage <- read_csv("datasets/mapbiomas-brazil-collection-71-doce-area.csv", show_col_types = FALSE)
+#colnames(coverage) <- c('AREA_HA', 'ANO', 'CLASSE')
+#coverage$ANO <- str_replace(coverage$ANO, 'classification_', '')
+#coverage <- coverage %>% filter(CLASSE %in% var_interesse)
+#coverage <- spread(coverage, CLASSE, AREA_HA)
+#coverage$ANO <- as.integer(coverage$ANO)
+#colnames(coverage) <- c("ANO", "Formacao_Florestal", "Plantacao_Florestal", "Pasto" , "Rio_Lago_Mar", "Infraestrutura_Urbana" )
+#############script para uso com a plataforma GEE - FIM
 
 water <- read_csv("datasets/mapbiomas-brazil-collection-10-doce-area.csv", show_col_types = FALSE)
 water <- water %>% select(band, area)
 colnames(water) <- c('ANO', 'WATER_COVERAGE_HA')
 water$ANO <- str_replace(water$ANO, 'water_coverage_', '')
 water$ANO <- as.integer(water$ANO)
-water
-pasture
+
+#Tabela de dados da pastagem
+#pasture <- pasto_mapbiomas_brazil_collection_10_doce_area <- read_csv("datasets/pasto-mapbiomas-brazil-collection-10-doce-area.csv", show_col_types = FALSE)
+#Ajusta tabela de pastagens
+#pasture <- as.data.frame(t(pasture))
+#pasture$AREA_HA = as.integer(pasture$V1) + as.integer(pasture$V2) + as.integer(pasture$V3)
+#pasture <- as.data.frame(pasture[-1,])%>%select(AREA_HA)
+#pasture$ANO <- rownames(pasture)
+#colnames(pasture) = c('PASTURE_AREA_HA', 'ANO')
+#pasture
+#pasture
 #water <- merge(water, pasture)
 dataset <- merge(coverage, water)
 #dataset$Pasto <- dataset$PASTURE_AREA_HA
-dataset$Rio_Lago_Mar = dataset$WATER_COVERAGE_HA
+#dataset$Rio_Lago_Mar = dataset$WATER_COVERAGE_HA
+
+
+#outro ajuste para não usar a tabela de outra plataforma
+dataset$Rio_Lago_Mar = dataset$AGUA
+dataset <- dataset%>%select(-c(WATER_COVERAGE_HA))
+dataset <- dataset%>%select(-c(AGUA))
+dataset$ANO <- as.integer(dataset$ANO)
 #Remove variável da memória, apartir desta linha consideramos a variável "dataset"
 rm(coverage)
 rm(water)
-dataset <- dataset%>%select(-c(WATER_COVERAGE_HA))
+
+
 attach(dataset)
+View(dataset)
 set.seed(2023)
 colnames((dataset))
 plot(dataset)
@@ -84,33 +121,8 @@ plot(dataset)
 modelos = list()
 
 #### 1 - Análise: Formacao_Florestal~ANO
-m1 <- glm(Formacao_Florestal~ANO)
-mnulo1 <- glm(Formacao_Florestal~1)
-
-anova.md1 <- anova(m1, mnulo1, test='F')
-summary.m1 <- summary(m1)
-
-dt.modelo1 <- analisamodelo(summary.m1)
-modelos <- append(modelos, dt.modelo1)
-
 #### 1.1 - Gráfico: Formacao_Florestal~ANO
-#plot(Formacao_Florestal~ANO, ylab="Formação florestal plantada (ha)", xlab=dt.modelo1$var_independente, pch=16,las=1,bty="l")
-chart.m1 <- ggplot(data=dataset, aes(y=Formacao_Florestal, x=ANO)) + 
-  geom_point(color='darkblue', size=2) +
-  theme(
-    axis.line = element_line(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank(),
-    panel.background = element_blank()
-  ) +
-  labs(
-    #x = 'ANO',
-    y = 'hectares',
-    title = paste('Área de ', denvar.florestanatural)
-  ) #+ annotate("text", x = 1990, y = 0, label = equacao) 
-  #facet_grid(Formacao_Florestal + Plantacao_Florestal~ANO)
-chart.m1
+############################# Não utilizada
 
 ################################################################################
 #### 2 - Análise: Plantacao_Florestal~ANO
@@ -136,16 +148,15 @@ chart.m2 <- ggplot(data=dataset, aes(y=Plantacao_Florestal, x=ANO)) +
     panel.background = element_blank(),
     axis.title.y = element_blank(),
   ) +
-  stat_smooth(method = "lm",
+  stat_smooth(method = "lm", formula = y~x,
   linetype="dashed", color="darkred", se = FALSE, size = 1) +
   labs(
     #x = 'ANO',
     y = 'hectares',
     title = paste('b) Área de ', denvar.florestaplantada)
   ) +
-  annotate("text", x = 2005, y = 700, label = "y = -105328.672790535 + 53.3482402827061*x", parse = FALSE)
+  annotate("text", x = 2010, y = 72000, label = "y= -10617008.6237666 + 5377.0066924067 * x")
 chart.m2
-
 
 
 ################################################################################
@@ -174,7 +185,7 @@ chart.m3 <- ggplot(data=dataset, aes(y=Pasto, x=ANO)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", y = 37300, x = 2002, label = "y= 105372268.203467 - 50368.9337662357 * x", parse = FALSE) +
+  annotate("text", y = 3750000, x = 1995, label = "y= 46484110.57293 - 21082.6086229086*x", parse = FALSE) +
   labs(
     #x = 'ANO',
     y = 'hectares',
@@ -183,7 +194,6 @@ chart.m3 <- ggplot(data=dataset, aes(y=Pasto, x=ANO)) +
 
 chart.m3
 summary.m3
-
 
 ################################################################################
 #### 4 - Análise: Rio_Lago_Mar~ANO
@@ -210,11 +220,11 @@ chart.m4 <- ggplot(data=dataset, aes(y=Rio_Lago_Mar, x=ANO)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", y = 565, x = 2000, label = "y= 5290.51701434742 + -2.29950466660375 * x", parse = FALSE) +
+  annotate("text", y = 72000, x = 2005, label = 'y= 541286.741098241 + -236.141055341056 * x', parse = FALSE) +
   labs(
     x = 'ANO',
     y = 'hectares',
-    title = paste('a) Área de ', denvar.water)
+    title = paste('a) Área de', denvar.water)
   )
 chart.m4
 
@@ -245,7 +255,7 @@ chart.m5 <- ggplot(data=dataset, aes(y=Infraestrutura_Urbana, x=ANO)) +
   ) +
   stat_smooth(method = "lm",
             linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", y = 200, x = 2009, label = "y= -21411.6114725616 + 10.8738498492724 * x", parse = FALSE) +
+  annotate("text", y = 20000, x = 2009, label = "y= -2150200.3028743 + 1091.90875160875*x", parse = FALSE) +
   labs(
     x = 'ANO',
     y = 'hectares',
@@ -253,14 +263,14 @@ chart.m5 <- ggplot(data=dataset, aes(y=Infraestrutura_Urbana, x=ANO)) +
   )
 chart.m5
 
+
+################################ Composição de gráficos#########################
+################################ #########################
+
 charts1 <- (chart.m4 | chart.m2) / (chart.m3 | chart.m5)
-charts1 + annotate("text", y = 0, x = 0, label = "figura 01")
+#charts1 + annotate("text", y = 0, x = 0, label = "figura 01")
 charts1
-colnames(dataset)
-530/387
-1080/1.369509
-1080*2
-2*788
+
 
 
 ################################################################################
@@ -293,7 +303,7 @@ chart.m6 <- ggplot(data=dataset, aes(x=Infraestrutura_Urbana, y=Rio_Lago_Mar)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", size = 10, x = 400, y = 725, label = "y = 765.509767577184 - 0.219415393368874 * x", parse = FALSE) +
+  annotate("text", size = 10, x = 50000, y = 25000, label = "y = 765.509767577184 - 0.219415393368874 * x", parse = FALSE) +
   labs(
     y = paste(denvar.water, '(ha)'),
     x = paste('Área ', denvar.urbanizada),
