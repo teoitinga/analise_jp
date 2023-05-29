@@ -2,6 +2,7 @@
 #install.packages('rlist')
 #install.packages('ggplot2')
 #install.packages('patchwork')
+#install.packages("ggpubr")
 
 library(ggplot2)
 library(readr)
@@ -10,6 +11,7 @@ library(tidyr)
 library(dplyr)
 library(rlist)
 library(patchwork)
+library(ggpubr)
 
 denvar.water = 'Superfície de água'
 denvar.pasto = 'Pastagem'
@@ -136,6 +138,7 @@ dt.modelo2 <- analisamodelo(summary.m2)
 modelos <- append(modelos, dt.modelo2)
 anova.md2
 dt.modelo2
+summary.m2
 #### 2.1 - Gráfico: Plantacao_Florestal~ANO
 chart.m2 <- ggplot(data=dataset, aes(y=Plantacao_Florestal, x=ANO)) + 
   geom_point(color='darkblue', size=2) + 
@@ -155,6 +158,7 @@ chart.m2 <- ggplot(data=dataset, aes(y=Plantacao_Florestal, x=ANO)) +
     y = 'hectares',
     title = paste('b) Área de ', denvar.florestaplantada)
   ) +
+  #stat_regline_equation()
   annotate("text", x = 2010, y = 72000, label = "y= -10617008.6237666 + 5377.0066924067 * x")
 chart.m2
 
@@ -220,14 +224,14 @@ chart.m4 <- ggplot(data=dataset, aes(y=Rio_Lago_Mar, x=ANO)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", y = 72000, x = 2005, label = 'y= 541286.741098241 + -236.141055341056 * x', parse = FALSE) +
+  annotate("text", y = 72000, x = 2005, label = 'y = 541286.741098241 - 236.141055341056 * x', parse = FALSE) +
   labs(
     x = 'ANO',
     y = 'hectares',
     title = paste('a) Área de', denvar.water)
   )
 chart.m4
-
+summary.m4
 
 ################################################################################
 #### 5 - Análise: Infraestrutura_Urbana~ANO
@@ -264,6 +268,13 @@ chart.m5 <- ggplot(data=dataset, aes(y=Infraestrutura_Urbana, x=ANO)) +
 chart.m5
 
 
+
+
+
+################################ #########################
+################################ #########################
+################################ #########################
+
 ################################ Composição de gráficos#########################
 ################################ #########################
 
@@ -274,6 +285,15 @@ charts1
 
 
 ################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
 #### 6 - Análise: Rio_Lago_Mar~Infraestrutura_Urbana
 m6 <- glm(Rio_Lago_Mar~Infraestrutura_Urbana)
 mnulo6 <- glm(Rio_Lago_Mar~1)
@@ -287,7 +307,7 @@ anova.md6
 dt.modelo6
 summary.m6
 anova.md6$`Pr(>F)`<0.05
-
+7.657e+04
 chart.m6 <- ggplot(data=dataset, aes(x=Infraestrutura_Urbana, y=Rio_Lago_Mar)) + 
   geom_point(color='darkblue', size=5) +
   theme(
@@ -303,17 +323,18 @@ chart.m6 <- ggplot(data=dataset, aes(x=Infraestrutura_Urbana, y=Rio_Lago_Mar)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", size = 10, x = 50000, y = 25000, label = "y = 765.509767577184 - 0.219415393368874 * x", parse = FALSE) +
+  annotate("text", size = 10, x = 28000, y = 62000, label = "y = 76571.0821369187 - 0.224414961149197 * x", parse = FALSE) +
   labs(
-    y = paste(denvar.water, '(ha)'),
-    x = paste('Área ', denvar.urbanizada),
-    caption = "Figura 04 - relação entre a área de superfície de água e infra estrutura urbana", loc='leftbottom'
+    y = paste(denvar.water, '(hectares)'),
+    x = paste('Área ', denvar.urbanizada, '(hectares)'),
+    #caption = "Figura 04 - relação entre a área de superfície de água e infra estrutura urbana", loc='leftbottom'
   )
+
 chart.m6
 summary.m6
 dt.modelo6
 colnames(dataset)
-
+?stat_regline_equation
 
 ################################################################################
 #### 7 - Análise: Rio_Lago_Mar~Plantacao_Florestal
@@ -344,11 +365,11 @@ chart.m7 <- ggplot(data=dataset, aes(x=Plantacao_Florestal, y=Rio_Lago_Mar)) +
   ) +
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", size=10, x = 1800, y = 730, label = "y = 771.49880872459 - 0.0811982098441572 * x", parse = FALSE) +
+  annotate("text", size=10, x = 150000, y = 60000, label = "y = 74274.9278639654 - 0.0389548430038348 * x", parse = FALSE) +
   labs(
-    y = paste(denvar.water, '(ha)'),
-    x = paste('Área de ', denvar.florestaplantada, ' (ha)'),
-    caption = "Figura 03", loc='leftbottom'
+    y = paste(denvar.water, '(hectares)'),
+    x = paste('Área de ', denvar.florestaplantada, ' (hectares)'),
+    #caption = "Figura 03", loc='leftbottom'
   )
 chart.m7
 summary.m7
@@ -363,7 +384,7 @@ mnulo8 <- glm(Rio_Lago_Mar~1)
 
 anova.md8 <- anova(m8, mnulo8, test='F')
 summary.m8 <- summary(m8)
-
+summary.m8
 dt.modelo8 <- analisamodelo(summary.m8)
 modelos <- append(modelos, dt.modelo8)
 anova.md8
@@ -374,8 +395,8 @@ chart.m8 <- ggplot(data=dataset, aes(x=Pasto, y=Rio_Lago_Mar)) +
   geom_point(color='darkblue', size=5) +
   theme(
     axis.line = element_line(),
-    panel.grid.major = element_blank(size=18),
-    axis.title = element_text(),
+    panel.grid.major = element_blank(),
+    axis.title = element_text(size=18),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
     panel.background = element_blank(),
@@ -386,11 +407,11 @@ chart.m8 <- ggplot(data=dataset, aes(x=Pasto, y=Rio_Lago_Mar)) +
 
   stat_smooth(method = "lm",
               linetype="dashed", color="darkred", se = FALSE, size = 1) +
-  annotate("text", size=10, x = 39700, y = 700, label = "y = 81.4364024310247 + 0.0133243204093905 * x", parse = FALSE) +
+  annotate("text", size=10, x = 3950000, y = 73000, label = "y = 43438.2241893521 + 0.00585442099157521 * x", parse = FALSE) +
   labs(
-    y = paste(denvar.water, ' (ha)'),
-    x = paste(denvar.pasto, ' (ha)'),
-    caption = "Figura 02", loc='leftbottom'
+    y = paste(denvar.water, ' (hestares)'),
+    x = paste('Área de ', denvar.pasto, ' (hectares)'),
+    #caption = "Figura 02", loc='leftbottom'
   )
 chart.m8
 
@@ -399,5 +420,5 @@ dt.modelo8
 
 8.144e+01
 
-
+citation()
 
